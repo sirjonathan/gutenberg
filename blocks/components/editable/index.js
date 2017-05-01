@@ -15,7 +15,12 @@ import './style.scss';
  // as we're doing here; instead, we should consider a common components path.
 import Toolbar from '../../../editor/components/toolbar';
 
-const KEYCODE_BACKSPACE = 8;
+const { BACKSPACE, UP, DOWN, LEFT, RIGHT } = window.tinymce.util.VK;
+
+const FOCUSABLE_SELECTORS = [
+	'input', 'textarea', '*[contenteditable="true"]', '*[tabindex]'
+];
+
 const formatMap = {
 	strong: 'bold',
 	em: 'italic',
@@ -146,26 +151,68 @@ export default class Editable extends wp.element.Component {
 		this.props.onChange( this.getContent() );
 	}
 
-	isStartOfEditor() {
-		const range = this.editor.selection.getRng();
-		if ( range.startOffset !== 0 || ! range.collapsed ) {
-			return false;
-		}
-		const start = range.startContainer;
-		const body = this.editor.getBody();
-		let element = start;
-		while ( element !== body ) {
-			const child = element;
-			element = element.parentNode;
-			if ( element.firstChild !== child ) {
+	isChildPosition( position, child ) {
+		const rootNode = this.editor.getBody();
+
+		while ( child !== rootNode ) {
+			const parentNode = child.parentNode;
+
+			if ( parentNode[ position + 'Child' ] !== child ) {
 				return false;
 			}
+
+			child = parentNode;
 		}
+
 		return true;
 	}
 
+	isStartOfEditor() {
+		const { startContainer, startOffset, collapsed } = this.editor.selection.getRng();
+
+		if ( ! collapsed || startOffset ) {
+			return false;
+		}
+
+		return this.isChildPosition( 'first', startContainer );
+	}
+
+	isEndOfEditor() {
+		const { endContainer, endOffset, collapsed } = this.editor.selection.getRng();
+
+		if ( ! collapsed || endOffset !== endContainer.textContent.length ) {
+			return false;
+		}
+
+		return this.isChildPosition( 'last', endContainer );
+	}
+
 	onKeyDown( event ) {
-		if ( this.props.onMerge && event.keyCode === KEYCODE_BACKSPACE && this.isStartOfEditor() ) {
+		const before = event.keyCode === UP || event.keyCode === LEFT;
+		const after = event.keyCode === DOWN || event.keyCode === RIGHT;
+
+		if ( ( before && this.isStartOfEditor() ) || ( after && this.isEndOfEditor() ) ) {
+			const rootNode = this.editor.getBody();
+			const focusableNodes = [ ...document.querySelectorAll( FOCUSABLE_SELECTORS.join( ',' ) ) ];
+
+			if ( before ) {
+				focusableNodes.reverse();
+			}
+
+			const targetNode = focusableNodes
+				.slice( focusableNodes.indexOf( rootNode ) )
+				.reduce( ( result, node ) => {
+					return result || ( node.contains( rootNode ) ? null : node );
+				}, null );
+
+			if ( targetNode ) {
+				targetNode.focus();
+				event.preventDefault();
+				event.stopImmediatePropagation();
+			}
+		}
+
+		if ( event.keyCode === BACKSPACE && this.props.onMerge && this.isStartOfEditor() ) {
 			this.onChange();
 			this.props.onMerge( this.editor.getContent() );
 			event.preventDefault();
