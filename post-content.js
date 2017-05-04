@@ -48,6 +48,10 @@ window._wpGutenbergPost = {
 			'<!-- wp:core/embed url:https://www.youtube.com/watch?v=Nl6U7UotA-M -->',
 			'<iframe width="560" height="315" src="//www.youtube.com/embed/Nl6U7UotA-M" frameborder="0" allowfullscreen></iframe>',
 			'<!-- /wp:core/embed -->',
+
+			'<!-- wp:core/code -->',
+			'const add = ( a, b ) =&gt; a + b;<br>const sum = l =&gt; l.reduce( add, 0 );<br>',
+			'<!-- /wp:core/code -->',
 		].join( '' ),
 	},
 };
