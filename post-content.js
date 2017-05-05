@@ -4,6 +4,10 @@
 window._wpGutenbergPost = {
 	content: {
 		raw: [
+			'<!-- wp:core/cover-image -->',
+			'<section className="cover-image" data-url="https://cldup.com/GCwahb3aOb.jpg" style={ { backgroundImage: \'url("https://cldup.com/GCwahb3aOb.jpg");\' } }><h2>Gutenberg Editor</h2></section>',
+			'<!-- /wp:core/cover-image -->',
+
 			'<!-- wp:core/heading -->',
 			'<h1>Welcome to the Gutenberg Editor</h1>',
 			'<!-- /wp:core/heading -->',
