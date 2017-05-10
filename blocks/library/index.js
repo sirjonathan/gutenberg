@@ -8,3 +8,4 @@ import './quote';
 import './separator';
 import './button';
 import './code';
+import './pullquote';

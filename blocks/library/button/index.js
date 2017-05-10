@@ -1,10 +1,14 @@
 /**
+ * WordPress dependencies
+ */
+import IconButton from 'components/icon-button';
+
+/**
  * Internal dependencies
  */
 import './style.scss';
-import { registerBlock, query } from 'api';
-import Editable from 'components/editable';
-import IconButton from '../../../editor/components/icon-button';
+import { registerBlock, query } from '../../api';
+import Editable from '../../editable';
 
 const { attr, children } = query;
 
@@ -32,8 +36,7 @@ registerBlock( 'core/button', {
 	attributes: {
 		url: attr( 'a', 'href' ),
 		title: attr( 'a', 'title' ),
-		text: children( 'a' ),
-		align: ( node ) => ( node.className.match( /\balign(\S+)/ ) || [] )[ 1 ]
+		text: children( 'a' )
 	},
 
 	controls: [
@@ -75,6 +78,7 @@ registerBlock( 'core/button', {
 					value={ text }
 					onFocus={ setFocus }
 					onChange={ ( value ) => setAttributes( { text: value } ) }
+					inline
 				/>
 				{ focus &&
 					<form

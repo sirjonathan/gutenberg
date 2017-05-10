@@ -7,11 +7,24 @@ import { Slot } from 'react-slot-fill';
 import { partial } from 'lodash';
 
 /**
- * Internal dependencies
+ * WordPress dependencies
  */
 import Toolbar from 'components/toolbar';
-import BlockMover from 'components/block-mover';
-import BlockSwitcher from 'components/block-switcher';
+
+/**
+ * Internal dependencies
+ */
+import BlockMover from '../../block-mover';
+import BlockSwitcher from '../../block-switcher';
+import {
+	getPreviousBlock,
+	getBlock,
+	getBlockFocus,
+	getBlockOrder,
+	isBlockHovered,
+	isBlockSelected,
+	isTypingInBlock
+} from '../../selectors';
 
 class VisualEditorBlock extends wp.element.Component {
 	constructor() {
@@ -21,6 +34,7 @@ class VisualEditorBlock extends wp.element.Component {
 		this.maybeDeselect = this.maybeDeselect.bind( this );
 		this.maybeHover = this.maybeHover.bind( this );
 		this.maybeStartTyping = this.maybeStartTyping.bind( this );
+		this.removeOnBackspace = this.removeOnBackspace.bind( this );
 		this.mergeWithPrevious = this.mergeWithPrevious.bind( this );
 		this.previousOffset = null;
 	}
@@ -76,6 +90,16 @@ class VisualEditorBlock extends wp.element.Component {
 		}
 	}
 
+	removeOnBackspace( event ) {
+		const { keyCode, target } = event;
+		if ( 8 /* Backspace */ === keyCode && target === this.node ) {
+			this.props.onRemove( this.props.uid );
+			if ( this.props.previousBlock ) {
+				this.props.onFocus( this.props.previousBlock.uid, { offset: -1 } );
+			}
+		}
+	}
+
 	mergeWithPrevious() {
 		const { block, previousBlock, onFocus, replaceBlocks } = this.props;
 
@@ -88,6 +112,7 @@ class VisualEditorBlock extends wp.element.Component {
 
 		// Do nothing if the previous block is not mergeable
 		if ( ! previousBlockSettings.merge ) {
+			onFocus( previousBlock.uid );
 			return;
 		}
 
@@ -121,13 +146,24 @@ class VisualEditorBlock extends wp.element.Component {
 		);
 	}
 
-	componentDidUpdate() {
+	componentDidUpdate( prevProps ) {
 		if ( this.previousOffset ) {
 			window.scrollTo(
 				window.scrollX,
 				window.scrollY + this.node.getBoundingClientRect().top - this.previousOffset
 			);
 			this.previousOffset = null;
+		}
+
+		// Focus node when focus state is programmatically transferred
+		if ( this.props.focus && ! prevProps.focus ) {
+			this.node.focus();
+		}
+	}
+
+	componentDidMount() {
+		if ( this.props.focus ) {
+			this.node.focus();
 		}
 	}
 
@@ -167,6 +203,7 @@ class VisualEditorBlock extends wp.element.Component {
 				onClick={ onSelect }
 				onFocus={ onSelect }
 				onBlur={ this.maybeDeselect }
+				onKeyDown={ this.removeOnBackspace }
 				onMouseEnter={ onHover }
 				onMouseMove={ this.maybeHover }
 				onMouseLeave={ onMouseLeave }
@@ -208,15 +245,14 @@ class VisualEditorBlock extends wp.element.Component {
 
 export default connect(
 	( state, ownProps ) => {
-		const order = state.blocks.order.indexOf( ownProps.uid );
 		return {
-			previousBlock: state.blocks.byUid[ state.blocks.order[ order - 1 ] ] || null,
-			block: state.blocks.byUid[ ownProps.uid ],
-			isSelected: state.selectedBlock.uid === ownProps.uid,
-			isHovered: state.hoveredBlock === ownProps.uid,
-			focus: state.selectedBlock.uid === ownProps.uid ? state.selectedBlock.focus : null,
-			isTyping: state.selectedBlock.uid === ownProps.uid ? state.selectedBlock.typing : false,
-			order
+			previousBlock: getPreviousBlock( state, ownProps.uid ),
+			block: getBlock( state, ownProps.uid ),
+			isSelected: isBlockSelected( state, ownProps.uid ),
+			isHovered: isBlockHovered( state, ownProps.uid ),
+			focus: getBlockFocus( state, ownProps.uid ),
+			isTyping: isTypingInBlock( state, ownProps.uid ),
+			order: getBlockOrder( state, ownProps.uid )
 		};
 	},
 	( dispatch, ownProps ) => ( {

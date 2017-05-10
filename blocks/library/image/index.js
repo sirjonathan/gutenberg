@@ -1,12 +1,15 @@
 /**
+ * WordPress dependencies
+ */
+import Button from 'components/button';
+import Placeholder from 'components/placeholder';
+
+/**
  * Internal dependencies
  */
 import './style.scss';
-import { registerBlock, query } from 'api';
-import Editable from 'components/editable';
-// TODO: Revisit when we have a common components solution
-import Dashicon from '../../../editor/components/dashicon';
-import Button from '../../../editor/components/button';
+import { registerBlock, query } from '../../api';
+import Editable from '../../editable';
 
 const { attr, children } = query;
 
@@ -34,8 +37,7 @@ registerBlock( 'core/image', {
 	attributes: {
 		url: attr( 'img', 'src' ),
 		alt: attr( 'img', 'alt' ),
-		caption: children( 'figcaption' ),
-		align: ( node ) => ( node.className.match( /\balign(\S+)/ ) || [] )[ 1 ]
+		caption: children( 'figcaption' )
 	},
 
 	controls: [
@@ -77,32 +79,34 @@ registerBlock( 'core/image', {
 
 		if ( ! url ) {
 			return (
-				<div className="blocks-image is-placeholder">
-					<div className="blocks-image__placeholder-label">
-						<Dashicon icon="format-image" />
-						{ wp.i18n.__( 'Image' ) }
-					</div>
-					<div className="blocks-image__placeholder-instructions">
-						{ wp.i18n.__( 'Drag image here or insert from media library' ) }
-					</div>
+				<Placeholder
+					instructions={ wp.i18n.__( 'Drag image here or insert from media library' ) }
+					icon="format-image"
+					label={ wp.i18n.__( 'Image' ) }
+					className="blocks-image">
 					<Button isLarge>
 						{ wp.i18n.__( 'Insert from Media Library' ) }
 					</Button>
-				</div>
+				</Placeholder>
 			);
 		}
+
+		const focusCaption = ( focusValue ) => setFocus( { editable: 'caption', ...focusValue } );
 
 		return (
 			<figure className="blocks-image">
 				<img src={ url } alt={ alt } />
-				{ caption || !! focus ? (
+				{ ( caption && caption.length > 0 ) || !! focus ? (
 					<Editable
 						tagName="figcaption"
 						placeholder={ wp.i18n.__( 'Write caption…' ) }
 						value={ caption }
-						focus={ focus }
-						onFocus={ setFocus }
-						onChange={ ( value ) => setAttributes( { caption: value } ) } />
+						focus={ focus && focus.editable === 'caption' ? focus : undefined }
+						onFocus={ focusCaption }
+						onChange={ ( value ) => setAttributes( { caption: value } ) }
+						inline
+						inlineToolbar
+					/>
 				) : null }
 			</figure>
 		);
@@ -112,7 +116,7 @@ registerBlock( 'core/image', {
 		const { url, alt, caption, align = 'none' } = attributes;
 		const img = <img src={ url } alt={ alt } className={ `align${ align }` } />;
 
-		if ( ! caption ) {
+		if ( ! caption || ! caption.length ) {
 			return img;
 		}
 
