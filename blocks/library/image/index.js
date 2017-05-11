@@ -8,7 +8,7 @@ import Placeholder from 'components/placeholder';
  * Internal dependencies
  */
 import './style.scss';
-import { registerBlock, query } from '../../api';
+import { registerBlock, createBlock, query } from '../../api';
 import Editable from '../../editable';
 
 const { attr, children } = query;
@@ -74,7 +74,7 @@ registerBlock( 'core/image', {
 		}
 	},
 
-	edit( { attributes, setAttributes, focus, setFocus } ) {
+	edit( { attributes, setAttributes, focus, setFocus, insertBlockAfter } ) {
 		const { url, alt, caption } = attributes;
 
 		if ( ! url ) {
@@ -106,6 +106,12 @@ registerBlock( 'core/image', {
 						onChange={ ( value ) => setAttributes( { caption: value } ) }
 						inline
 						inlineToolbar
+						onSplit={ ( before, after ) => {
+							setAttributes( { content: before } );
+							insertBlockAfter( createBlock( 'core/text', {
+								content: <p>{ after }</p>
+							} ) );
+						} }
 					/>
 				) : null }
 			</figure>
