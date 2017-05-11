@@ -19,8 +19,6 @@ import './style.scss';
 import FormatToolbar from './format-toolbar';
 import TinyMCE from './tinymce';
 
-const KEYCODE_BACKSPACE = 8;
-
 const alignmentMap = {
 	alignleft: 'left',
 	alignright: 'right',
@@ -178,11 +176,33 @@ export default class Editable extends wp.element.Component {
 	}
 
 	onKeyDown( event ) {
-		if ( this.props.onMerge && event.keyCode === KEYCODE_BACKSPACE && this.isStartOfEditor() ) {
+		const { BACKSPACE, ENTER } = tinymce.util.VK;
+
+		if ( this.props.onMerge && event.keyCode === BACKSPACE && this.isStartOfEditor() ) {
 			this.onChange();
 			this.props.onMerge( this.editor.getContent() );
 			event.preventDefault();
 			event.stopImmediatePropagation();
+		}
+
+		if ( this.props.inline && this.props.onSplit && event.keyCode === ENTER ) {
+			const isCollapsed = this.editor.selection.isCollapsed();
+			const node = this.editor.selection.getEnd();
+
+			if ( ! isCollapsed || node.nodeType !== 1 || node.nodeName !== 'BR' ) {
+				return;
+			}
+
+			event.preventDefault();
+			event.stopImmediatePropagation();
+
+			const childNodes = Array.from( this.editor.getBody().childNodes );
+			const splitIndex = childNodes.indexOf( node );
+			const before = nodeListToReact( childNodes.slice( 0, splitIndex ), createElement );
+			const after = nodeListToReact( childNodes.slice( splitIndex + 1 ), createElement );
+
+			this.setContent( before );
+			this.props.onSplit( before, after );
 		}
 	}
 
