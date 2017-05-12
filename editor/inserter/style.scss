@@ -88,6 +88,16 @@
 			}
 		}
 	}
+
+	&.is-right {
+		left: -30px;
+		.editor-inserter__arrow {
+			left: 47px;
+			&:before {
+				left: 0;
+			}
+		}
+	}
 }
 
 .editor-inserter__arrow {
